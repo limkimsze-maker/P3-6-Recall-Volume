@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Swimming Volume Recall Challenge</title>
+<style>
+:root{
+  --blue:#1683c7;
+  --deep:#0c5c92;
+  --sky:#eef9ff;
+  --ink:#22384d;
+  --good:#199a52;
+  --bad:#cf4c4c;
+  --p1:#438fe8;
+  --p2:#e95a55;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;height:100%;overflow:hidden;
+  font-family:"Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif;
+  background:linear-gradient(#edf8ff,#fff);
+  color:var(--ink)
+}
+body{padding:8px}
+button,input{font:inherit}
+button{cursor:pointer;touch-action:manipulation}
+.app{
+  max-width:1260px;height:calc(100vh - 16px);margin:auto;
+  background:#fff;border:2px solid #cfe9fb;border-radius:24px;
+  overflow:hidden;box-shadow:0 12px 34px #4c8fb521;
+  display:flex;flex-direction:column
+}
+header{
+  flex:0 0 auto;background:var(--blue);color:#fff;padding:10px 16px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px
+}
+header h1{margin:0;font-size:clamp(22px,2.8vw,36px)}
+header .sub{font-size:12px;line-height:1.25;text-align:right}
+main{flex:1;min-height:0;padding:10px;display:flex;flex-direction:column}
+.screen{display:none;height:100%;min-height:0}
+.screen.active{display:flex}
+.card{border:2px solid #d7edf9;border-radius:20px;background:#fff;box-shadow:0 7px 18px #4d8fb514}
+.hidden{display:none!important}
+
+/* HOME */
+#home{align-items:stretch}
+.homeGrid{flex:1;min-height:0;display:grid;grid-template-columns:1.05fr .95fr;gap:10px}
+.intro,.preview{padding:18px;overflow:hidden}
+.intro h2{margin:0;color:var(--deep);font-size:clamp(28px,4.4vw,52px);line-height:1.02}
+.intro p{font-size:clamp(15px,1.7vw,21px);line-height:1.42;margin:10px 0}
+.modeRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.modeBtn{
+  border:0;border-radius:18px;color:#fff;padding:18px 10px;
+  font-size:clamp(20px,2.2vw,28px);font-weight:900;box-shadow:0 6px 0 #0002
+}
+.modeBtn.one{background:var(--p1)}
+.modeBtn.two{background:linear-gradient(90deg,var(--p1) 50%,var(--p2) 50%)}
+.modeBtn:active{transform:translateY(3px);box-shadow:0 3px 0 #0002}
+.preview{background:linear-gradient(150deg,#fff,#eef9ff)}
+.preview h3{margin:0 0 8px;color:var(--deep);font-size:clamp(22px,2.4vw,30px)}
+.preview ul{font-size:clamp(14px,1.5vw,18px);line-height:1.5;margin:0 0 8px 20px;padding:0}
+.previewArt{
+  height:210px;border:2px solid #d7ecfa;border-radius:18px;background:#fff;
+  display:flex;align-items:center;justify-content:center;overflow:hidden
+}
+.note{font-size:12px;color:#6b7f90;text-align:center;margin-top:8px;line-height:1.3}
+
+/* GAME */
+#game{flex-direction:column;gap:7px}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.btnRow{display:flex;gap:8px}
+.smallbtn{
+  border:0;background:#eaf6ff;color:#075f9f;border-radius:11px;padding:8px 12px;
+  font-weight:900;font-size:14px
+}
+.statusline{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.score{padding:8px 12px;border:2px solid #dceeff;border-radius:13px;background:#fff;font-weight:900}
+.score.p1{border-color:#b8d6ff}.score.p2{border-color:#ffc1bf;text-align:right}
+.round{font-weight:900;color:#5f7485;text-align:center}
+.progress{height:8px;background:#e9f3f9;border-radius:999px;overflow:hidden}
+.progress div{height:100%;background:var(--blue);width:0;transition:.25s}
+
+.gameGrid{
+  flex:1;min-height:0;
+  display:grid;grid-template-columns:minmax(0,1.16fr) minmax(350px,.84fr);gap:8px
+}
+.questionCard{
+  min-height:0;padding:12px;display:flex;flex-direction:column;overflow:hidden
+}
+.badges{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{padding:6px 12px;border-radius:999px;font-weight:900;background:#eaf7ff;color:#0767aa}
+.turn.p1{background:#edf5ff;color:#3372bc;border:2px solid #bfd8ff}
+.turn.p2{background:#fff0ef;color:#b9413d;border:2px solid #ffc3c0}
+#question{
+  text-align:center;font-weight:900;font-size:clamp(20px,2.5vw,31px);line-height:1.15;
+  margin:8px 0
+}
+.scene{
+  flex:1;min-height:0;border:2px solid #d9edfa;border-radius:18px;background:#fbfeff;
+  display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden
+}
+.sceneInner{
+  width:100%;height:100%;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:center
+}
+.containerCard{
+  min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px
+}
+.contLabel{font-weight:900;font-size:clamp(18px,1.8vw,24px);color:var(--deep)}
+.containerSvg{width:min(190px,100%);height:165px}
+.bottleRow{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:5px;max-width:180px;min-height:54px
+}
+.bottleSvg{width:21px;height:48px}
+.answerWrap{
+  display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:10px;font-size:clamp(20px,2.4vw,28px);font-weight:900
+}
+.answerInput{
+  width:130px;height:50px;border:3px solid #b6d8f0;border-radius:14px;background:#fff;
+  text-align:center;font-weight:900;font-size:clamp(20px,2.3vw,28px);color:var(--ink)
+}
+.answerInput.small{width:96px;text-transform:uppercase}
+.answerInput.correct{border-color:var(--good);background:#edf9f2;color:#08743a}
+.answerInput.wrong{border-color:var(--bad);background:#fff1f1;color:#b33030}
+.answerHint{text-align:center;font-size:14px;color:#6c7f90;margin-top:4px;min-height:18px}
+.actions{display:flex;justify-content:center;gap:10px;margin-top:8px}
+.action{
+  border:0;border-radius:13px;padding:9px 18px;background:var(--blue);color:#fff;
+  font-weight:900;font-size:18px
+}
+.action.alt{background:#6d80a6}
+.feedback{text-align:center;min-height:26px;font-weight:900;font-size:18px;margin-top:6px}
+.explain{text-align:center;min-height:30px;color:#637486;font-size:14px;line-height:1.35}
+
+/* Swimming race */
+.raceCard{
+  min-height:0;padding:10px;display:flex;flex-direction:column;overflow:hidden;
+  background:linear-gradient(#fbfdff,#f4faff)
+}
+.raceTitle{
+  align-self:center;font-weight:900;font-size:clamp(18px,2vw,24px);
+  padding:6px 12px;border-radius:999px;background:#eaf7ff;color:#0c5c92
+}
+.raceStage{
+  flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  border-radius:18px;overflow:hidden;background:#dff5ff;margin-top:8px
+}
+.raceSvg{width:100%;height:100%}
+.raceNote{text-align:center;font-weight:900;font-size:18px;min-height:26px;margin-top:6px;color:#5a6c7a}
+
+/* Results */
+#results{align-items:center;justify-content:center}
+.results{width:min(680px,100%);padding:28px;text-align:center}
+.trophy{font-size:72px}
+.results h2{margin:0 0 10px;color:var(--deep);font-size:clamp(30px,4vw,50px)}
+.results p{font-size:clamp(18px,2vw,23px);line-height:1.45}
+.bigbtn{border:0;border-radius:14px;padding:12px 20px;margin:5px;background:var(--blue);color:#fff;font-size:19px;font-weight:900}
+.gold{background:#d99b16}
+
+@media(max-width:980px){
+  .homeGrid{grid-template-columns:1fr}.preview{display:none}
+  .gameGrid{grid-template-columns:1fr;grid-template-rows:minmax(0,1.16fr) minmax(180px,.84fr)}
+}
+@media(max-width:700px){
+  body{padding:0}.app{height:100vh;border-radius:0}
+  header{padding:8px 12px}
+  main{padding:8px}
+  .sceneInner{gap:6px}
+  .containerSvg{height:145px}
+  .bottleSvg{width:18px;height:42px}
+  .answerInput{width:102px;height:44px}
+  .answerInput.small{width:86px}
+}
+@media(max-height:760px){
+  .questionCard,.raceCard{padding:8px}
+  #question{font-size:19px;margin:5px 0}
+  .containerSvg{height:140px}
+  .bottleSvg{width:18px;height:41px}
+  .answerInput{height:42px}
+  .feedback{font-size:16px;margin-top:4px}
+  .explain{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>🏊 Swimming Volume Recall Challenge</h1>
+  <div class="sub">Read volume in litres • compare containers<br>1 Player or 2 Players</div>
+</header>
+
+<main>
+<section id="home" class="screen active">
+  <div class="homeGrid">
+    <div class="card intro">
+      <h2>Read the Volume. Swim to the Finish!</h2>
+      <p>Look at the 3 containers and the matching <b>1 ℓ bottles</b>. Then answer questions about the volume of water in the containers.</p>
+
+      <div class="modeRow">
+        <button class="modeBtn one" onclick="startGame(1)">👤 1 Player</button>
+        <button class="modeBtn two" onclick="startGame(2)">👥 2 Players</button>
+      </div>
+
+      <div class="note">
+        Correct answer: the swimmer moves forward.<br>
+        Wrong answer: the swimmer makes a splash and stays behind.
+      </div>
+    </div>
+
+    <div class="card preview">
+      <h3>Question types</h3>
+      <ul>
+        <li>What is the volume in Container A, B or C?</li>
+        <li>Which container has the greatest volume?</li>
+        <li>Which container has the smallest volume?</li>
+        <li>How many litres greater or less?</li>
+      </ul>
+      <div class="previewArt" id="previewArt"></div>
+    </div>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="controls">
+    <div class="btnRow">
+      <button class="smallbtn" onclick="goHome()">← Home</button>
+      <button class="smallbtn" onclick="restart()">↻ New Game</button>
+    </div>
+    <button class="smallbtn" id="soundBtn" onclick="toggleSound()">🔊 Sound On</button>
+  </div>
+
+  <div class="statusline">
+    <div class="score p1" id="score1">Player 1: 0</div>
+    <div class="round" id="round">1 / 10</div>
+    <div class="score p2" id="score2">Player 2: 0</div>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
+
+  <div class="gameGrid">
+    <div class="card questionCard">
+      <div class="badges">
+        <div class="badge" id="typeBadge">Read volume</div>
+        <div class="badge turn p1" id="turnBanner">👤 Your Turn</div>
+      </div>
+
+      <div id="question">What is the volume of water in Container A?</div>
+
+      <div class="scene" id="scene"></div>
+
+      <div class="answerWrap" id="answerWrap">
+        <input id="answerInput" class="answerInput" inputmode="text" autocomplete="off">
+        <span id="answerSuffix">ℓ</span>
+      </div>
+      <div class="answerHint" id="answerHint"></div>
+
+      <div class="actions">
+        <button id="checkBtn" class="action" onclick="checkAnswer()">Check Answer</button>
+        <button id="nextBtn" class="action alt hidden" onclick="nextQuestion()">Next →</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+      <div class="explain" id="explain"></div>
+    </div>
+
+    <div class="card raceCard">
+      <div class="raceTitle">Swimming Race</div>
+      <div class="raceStage">
+        <svg class="raceSvg" id="raceSvg" viewBox="0 0 520 250" aria-label="swimming race">
+          <defs>
+            <pattern id="waterPat" width="40" height="20" patternUnits="userSpaceOnUse">
+              <path d="M0 10 Q10 2 20 10 T40 10" fill="none" stroke="#7fcdf5" stroke-width="3"/>
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="520" height="250" fill="#dff5ff"/>
+          <rect x="20" y="45" width="470" height="160" rx="18" fill="#89d7fb" stroke="#58b9ea" stroke-width="4"/>
+          <rect x="20" y="45" width="470" height="160" rx="18" fill="url(#waterPat)" opacity=".65"/>
+          <line x1="25" y1="125" x2="485" y2="125" stroke="#fff6a8" stroke-width="6" stroke-dasharray="16 12"/>
+          <rect x="470" y="48" width="9" height="154" fill="#fff"/>
+          <g id="finishFlag">
+            <line x1="480" y1="28" x2="480" y2="55" stroke="#555" stroke-width="4"/>
+            <path d="M480 28 L505 35 L480 42 Z" fill="#ff6b6b"/>
+          </g>
+
+          <text x="35" y="34" font-size="17" font-weight="900" fill="#0c5c92">START</text>
+          <text x="428" y="34" font-size="17" font-weight="900" fill="#0c5c92">FINISH</text>
+
+          <text id="lane1Label" x="30" y="88" font-size="18" font-weight="900" fill="#174f87">Player 1</text>
+          <text id="lane2Label" x="30" y="168" font-size="18" font-weight="900" fill="#b23c38">Player 2</text>
+
+          <g id="swimmer1" transform="translate(58 85)">
+            <ellipse cx="18" cy="15" rx="18" ry="8" fill="#ffffffaa"/>
+            <circle cx="8" cy="6" r="8" fill="#f3bf94" stroke="#20364b" stroke-width="2"/>
+            <path d="M2 4 Q8 -4 14 4" fill="#2a4156"/>
+            <path d="M17 12 Q28 10 34 16" stroke="#438fe8" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <path d="M24 10 Q33 3 41 9" stroke="#f3bf94" stroke-width="5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <g id="swimmer2" transform="translate(58 165)">
+            <ellipse cx="18" cy="15" rx="18" ry="8" fill="#ffffffaa"/>
+            <circle cx="8" cy="6" r="8" fill="#f3bf94" stroke="#20364b" stroke-width="2"/>
+            <path d="M2 4 Q8 -4 14 4" fill="#2a4156"/>
+            <path d="M17 12 Q28 10 34 16" stroke="#e95a55" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <path d="M24 10 Q33 3 41 9" stroke="#f3bf94" stroke-width="5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <g id="splash1" opacity="0">
+            <circle cx="0" cy="0" r="4" fill="#fff"/>
+            <circle cx="12" cy="-6" r="3" fill="#fff"/>
+            <circle cx="22" cy="3" r="4" fill="#fff"/>
+            <circle cx="10" cy="9" r="3" fill="#fff"/>
+          </g>
+          <g id="splash2" opacity="0">
+            <circle cx="0" cy="0" r="4" fill="#fff"/>
+            <circle cx="12" cy="-6" r="3" fill="#fff"/>
+            <circle cx="22" cy="3" r="4" fill="#fff"/>
+            <circle cx="10" cy="9" r="3" fill="#fff"/>
+          </g>
+        </svg>
+      </div>
+      <div class="raceNote" id="raceNote">Ready to swim!</div>
+    </div>
+  </div>
+</section>
+
+<section id="results" class="screen">
+  <div class="card results">
+    <div class="trophy">🏆</div>
+    <h2 id="resultTitle">Great Work!</h2>
+    <p id="resultText"></p>
+    <button class="bigbtn" onclick="restart()">Play Again</button>
+    <button class="bigbtn gold" onclick="goHome()">Choose Mode</button>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+const TOTAL=10;
+let mode=1;
+let round=0;
+let currentPlayer=0;
+let scores=[0,0];
+let questions=[];
+let answered=false;
+let soundOn=true;
+let audioCtx=null;
+
+// -------- SOUND --------
+function initAudio(){
+  if(audioCtx) return;
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(Ctx) audioCtx=new Ctx();
+}
+function tone(freq,dur=.1,type="triangle",vol=.04,delay=0){
+  if(!soundOn) return;
+  initAudio();
+  if(!audioCtx) return;
+  const t=audioCtx.currentTime+delay;
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  o.type=type;
+  o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(audioCtx.destination);
+  o.start(t); o.stop(t+dur+.03);
+}
+function correctSound(){tone(660,.08);tone(880,.12,"triangle",.045,.09)}
+function wrongSound(){tone(210,.12,"sawtooth",.045);tone(160,.18,"sawtooth",.035,.11)}
+function swimSound(){tone(340,.07,"square",.03);tone(470,.08,"square",.03,.08);tone(590,.09,"triangle",.035,.16)}
+function toggleSound(){
+  soundOn=!soundOn;
+  document.getElementById("soundBtn").textContent=soundOn?"🔊 Sound On":"🔇 Sound Off";
+}
+
+// -------- HELPERS --------
+function show(id){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function goHome(){show("home")}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function sampleDistinct(arr,n){
+  const s=shuffle(arr);
+  return s.slice(0,n);
+}
+function startGame(m){
+  mode=m;
+  initAudio();
+  if(audioCtx&&audioCtx.state==="suspended") audioCtx.resume();
+  restart();
+}
+function restart(){
+  round=0;
+  currentPlayer=0;
+  scores=[0,0];
+  questions=buildQuestions();
+  document.getElementById("score2").style.visibility=mode===2?"visible":"hidden";
+  document.getElementById("lane2Label").style.visibility=mode===2?"visible":"hidden";
+  document.getElementById("swimmer2").style.visibility=mode===2?"visible":"hidden";
+  show("game");
+  renderQuestion();
+}
+
+// -------- QUESTION DATA --------
+function buildQuestions(){
+  const qs=[];
+  const kinds=["readA","readB","readC","greatest","smallest","compareDiff","compareDiff","compareDiff","readA","greatest"];
+  for(let i=0;i<TOTAL;i++){
+    const [a,b,c]=sampleDistinct([2,3,4,5,6,7,8,9],3);
+    const vols={A:a,B:b,C:c};
+    const labels=["A","B","C"];
+    const kind=kinds[i];
+
+    if(kind==="readA"||kind==="readB"||kind==="readC"){
+      const container=kind.slice(-1);
+      qs.push({
+        type:"number",
+        badge:"Read volume",
+        question:`What is the volume of water in Container ${container}?`,
+        answer:String(vols[container]),
+        suffix:"ℓ",
+        hint:"Type the number of litres.",
+        explain:`Container ${container} contains ${vols[container]} ℓ of water.`,
+        vols
+      });
+      continue;
+    }
+
+    if(kind==="greatest"){
+      const ans=labels.reduce((m,x)=>vols[x]>vols[m]?x:m,labels[0]);
+      qs.push({
+        type:"letter",
+        badge:"Compare volume",
+        question:`Which container contains the greatest volume of water?`,
+        answer:ans,
+        suffix:"",
+        hint:"Type A, B or C.",
+        explain:`Container ${ans} has the greatest volume of water.`,
+        vols
+      });
+      continue;
+    }
+
+    if(kind==="smallest"){
+      const ans=labels.reduce((m,x)=>vols[x]<vols[m]?x:m,labels[0]);
+      qs.push({
+        type:"letter",
+        badge:"Compare volume",
+        question:`Which container contains the smallest volume of water?`,
+        answer:ans,
+        suffix:"",
+        hint:"Type A, B or C.",
+        explain:`Container ${ans} has the smallest volume of water.`,
+        vols
+      });
+      continue;
+    }
+
+    // compare difference: choose random pair and phrase greater/less correctly
+    const pair=sampleDistinct(labels,2);
+    let x=pair[0], y=pair[1];
+    const diff=Math.abs(vols[x]-vols[y]);
+    let qText="";
+    if(vols[x]>vols[y]){
+      qText=`The volume of water in Container ${x} is how many litres greater than that in Container ${y}?`;
+    }else{
+      qText=`The volume of water in Container ${x} is how many litres less than that in Container ${y}?`;
+    }
+    qs.push({
+      type:"number",
+      badge:"Compare difference",
+      question:qText,
+      answer:String(diff),
+      suffix:"ℓ",
+      hint:"Type the number of litres.",
+      explain:`Container ${x} has ${vols[x]} ℓ and Container ${y} has ${vols[y]} ℓ, so the difference is ${diff} ℓ.`,
+      vols
+    });
+  }
+  return qs;
+}
+
+// -------- GRAPHICS --------
+function bottleSVG(){
+  return `<svg class="bottleSvg" viewBox="0 0 30 70" aria-label="1 litre bottle">
+    <rect x="12" y="3" width="6" height="7" rx="2" fill="#4d93d2"/>
+    <rect x="10" y="9" width="10" height="6" rx="2" fill="#76afe4"/>
+    <path d="M7 15 Q9 10 15 10 Q21 10 23 15 L24 61 Q24 66 15 66 Q6 66 6 61 Z" fill="#f4fbff" stroke="#8bbfe4" stroke-width="2"/>
+    <path d="M9 23 L21 23 L20 57 Q20 61 15 61 Q10 61 10 57 Z" fill="#dff3ff"/>
+    <text x="15" y="42" text-anchor="middle" font-size="10" font-weight="900" fill="#1b5482">1 ℓ</text>
+  </svg>`;
+}
+function containerSVG(volume){
+  const max=9;
+  const fillH=22 + (volume/max)*66;
+  const y=105-fillH;
+  return `<svg class="containerSvg" viewBox="0 0 150 160" aria-label="${volume} litre container">
+    <path d="M25 25 L106 25 L126 45 L126 120 L25 120 Z" fill="none" stroke="#2e8bd8" stroke-width="3"/>
+    <path d="M25 25 L25 45 L126 45" fill="none" stroke="#2e8bd8" stroke-width="3"/>
+    <path d="M106 25 L106 45 L126 45" fill="none" stroke="#2e8bd8" stroke-width="3"/>
+    <rect x="27" y="${y}" width="97" height="${fillH}" fill="#8ed4ee" opacity=".9"/>
+    <line x1="27" y1="${y}" x2="124" y2="${y}" stroke="#5cb7e2" stroke-width="3"/>
+  </svg>`;
+}
+function renderContainers(vols){
+  const make=(letter,val)=>`
+    <div class="containerCard">
+      <div class="contLabel">Container ${letter}</div>
+      ${containerSVG(val)}
+      <div class="bottleRow">${Array.from({length:val}, bottleSVG).join("")}</div>
+    </div>`;
+  return `<div class="sceneInner">
+    ${make("A",vols.A)}
+    ${make("B",vols.B)}
+    ${make("C",vols.C)}
+  </div>`;
+}
+
+// -------- SWIMMING RACE --------
+function maxScorePerLane(){
+  return mode===2 ? Math.ceil(TOTAL/2) : TOTAL;
+}
+function swimmerX(score){
+  const start=58, end=418;
+  const limit=maxScorePerLane();
+  return start + (score/limit)*(end-start);
+}
+function setSwimmerPosition(player, x){
+  const y=player===0?85:165;
+  document.getElementById(player===0?"swimmer1":"swimmer2").setAttribute("transform",`translate(${x} ${y})`);
+}
+function resetRaceGraphic(){
+  setSwimmerPosition(0, swimmerX(scores[0]));
+  setSwimmerPosition(1, swimmerX(scores[1]));
+  document.getElementById("splash1").setAttribute("opacity","0");
+  document.getElementById("splash2").setAttribute("opacity","0");
+}
+function successSwim(player){
+  swimSound();
+  const gid=player===0?"swimmer1":"swimmer2";
+  const g=document.getElementById(gid);
+  const y=player===0?85:165;
+  const prev=swimmerX(scores[player]-1);
+  const now=swimmerX(scores[player]);
+  g.animate([
+    {transform:`translate(${prev}px, ${y}px)`},
+    {transform:`translate(${now}px, ${y}px)`}
+  ],{duration:650,easing:"ease-out",fill:"forwards"});
+  g.setAttribute("transform",`translate(${now} ${y})`);
+  document.getElementById("raceNote").textContent=player===0?"🏊 Player 1 swims forward!":"🏊 Player 2 swims forward!";
+}
+function failSplash(player){
+  wrongSound();
+  const gid=player===0?"swimmer1":"swimmer2";
+  const sid=player===0?"splash1":"splash2";
+  const g=document.getElementById(gid);
+  const s=document.getElementById(sid);
+  const y=player===0?85:165;
+  const x=swimmerX(scores[player]);
+
+  g.animate([
+    {transform:`translate(${x}px, ${y}px)`},
+    {transform:`translate(${x-5}px, ${y}px)`},
+    {transform:`translate(${x+5}px, ${y}px)`},
+    {transform:`translate(${x}px, ${y}px)`}
+  ],{duration:420,easing:"ease-in-out"});
+  g.setAttribute("transform",`translate(${x} ${y})`);
+
+  s.setAttribute("transform",`translate(${x+26} ${y+12})`);
+  s.animate([{opacity:0},{opacity:1},{opacity:0}],{duration:420,easing:"ease-out"});
+  document.getElementById("raceNote").textContent=player===0?"💦 Splash! Player 1 stays behind.":"💦 Splash! Player 2 stays behind.";
+}
+
+// -------- GAME --------
+function renderQuestion(){
+  answered=false;
+  const q=questions[round];
+
+  document.getElementById("round").textContent=`${round+1} / ${TOTAL}`;
+  document.getElementById("bar").style.width=`${(round/TOTAL)*100}%`;
+  document.getElementById("score1").textContent=`Player 1: ${scores[0]}`;
+  document.getElementById("score2").textContent=`Player 2: ${scores[1]}`;
+  document.getElementById("typeBadge").textContent=q.badge;
+  document.getElementById("question").textContent=q.question;
+  document.getElementById("scene").innerHTML=renderContainers(q.vols);
+  document.getElementById("feedback").textContent="";
+  document.getElementById("explain").textContent="";
+  resetRaceGraphic();
+
+  const input=document.getElementById("answerInput");
+  const suffix=document.getElementById("answerSuffix");
+  const hint=document.getElementById("answerHint");
+  input.value="";
+  input.disabled=false;
+  input.className="answerInput"+(q.type==="letter"?" small":"");
+  input.setAttribute("inputmode",q.type==="number"?"numeric":"text");
+  input.placeholder=q.type==="letter"?"A/B/C":"";
+  suffix.textContent=q.suffix;
+  suffix.style.visibility=q.suffix? "visible":"hidden";
+  hint.textContent=q.hint;
+  input.focus();
+
+  const check=document.getElementById("checkBtn");
+  check.disabled=false;
+  document.getElementById("nextBtn").classList.add("hidden");
+
+  const turn=document.getElementById("turnBanner");
+  if(mode===2){
+    turn.textContent=currentPlayer===0?"🔵 Player 1's Turn":"🔴 Player 2's Turn";
+    turn.className="badge turn "+(currentPlayer===0?"p1":"p2");
+  }else{
+    turn.textContent="👤 Your Turn";
+    turn.className="badge turn p1";
+  }
+  document.getElementById("raceNote").textContent="Ready to swim!";
+}
+function normaliseAnswer(val,type){
+  if(type==="letter") return val.trim().toUpperCase();
+  return val.trim();
+}
+function checkAnswer(){
+  if(answered) return;
+
+  const q=questions[round];
+  const input=document.getElementById("answerInput");
+  const raw=input.value;
+
+  if(raw.trim()===""){
+    const f=document.getElementById("feedback");
+    f.textContent="⚠️ Fill in the blank first.";
+    f.style.color="#b36f14";
+    return;
+  }
+
+  answered=true;
+  input.disabled=true;
+  document.getElementById("checkBtn").disabled=true;
+
+  let ok=false;
+  const user=normaliseAnswer(raw,q.type);
+  if(q.type==="number"){
+    ok=/^\d+$/.test(user) && Number(user)===Number(q.answer);
+  }else{
+    ok=user===q.answer;
+  }
+
+  const fb=document.getElementById("feedback");
+  const ex=document.getElementById("explain");
+  if(ok){
+    correctSound();
+    scores[mode===2?currentPlayer:0]++;
+    input.classList.add("correct");
+    fb.textContent="✅ Correct!";
+    fb.style.color="#14884b";
+    ex.textContent=q.explain;
+    successSwim(mode===2?currentPlayer:0);
+  }else{
+    input.classList.add("wrong");
+    fb.textContent="❌ Not quite.";
+    fb.style.color="#b43b3b";
+    ex.textContent=`${q.explain} The correct answer is ${q.answer}${q.suffix? " "+q.suffix:""}.`;
+    failSplash(mode===2?currentPlayer:0);
+  }
+
+  document.getElementById("score1").textContent=`Player 1: ${scores[0]}`;
+  document.getElementById("score2").textContent=`Player 2: ${scores[1]}`;
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+function nextQuestion(){
+  round++;
+  if(round>=TOTAL){finish();return}
+  if(mode===2) currentPlayer=currentPlayer===0?1:0;
+  renderQuestion();
+}
+function finish(){
+  document.getElementById("bar").style.width="100%";
+  show("results");
+  if(mode===1){
+    const s=scores[0];
+    document.getElementById("resultTitle").textContent=s>=8?"Swimming Volume Champion!":s>=5?"Great Swimming!":"Keep Practising!";
+    document.getElementById("resultText").innerHTML=
+      `You answered <b>${s} out of ${TOTAL}</b> questions correctly.<br>`+
+      (s>=8?"Excellent work reading and comparing volume!":s>=5?"You are getting confident with litres and comparison questions.":"Try again and look carefully at the 1 ℓ bottles.");
+  }else{
+    const a=scores[0], b=scores[1];
+    document.getElementById("resultTitle").textContent=a===b?"It's a Draw!":`Player ${a>b?1:2} Wins!`;
+    document.getElementById("resultText").innerHTML=
+      `Player 1: <b>${a}</b><br>Player 2: <b>${b}</b><br><br>Players took turns answering volume questions and swimming to the finish.`;
+  }
+}
+
+// Enter key
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("game").classList.contains("active")) return;
+  if(e.key==="Enter"){
+    e.preventDefault();
+    if(answered) nextQuestion();
+    else checkAnswer();
+  }
+});
+
+// Preview art
+document.getElementById("previewArt").innerHTML=`
+<svg viewBox="0 0 560 220" style="width:100%;height:100%">
+  <rect x="20" y="120" width="500" height="70" rx="18" fill="#89d7fb" stroke="#58b9ea" stroke-width="4"/>
+  <line x1="30" y1="155" x2="510" y2="155" stroke="#fff6a8" stroke-width="6" stroke-dasharray="16 12"/>
+  <rect x="495" y="122" width="9" height="66" fill="#fff"/>
+  <line x1="505" y1="100" x2="505" y2="123" stroke="#555" stroke-width="4"/>
+  <path d="M505 100 L532 108 L505 116 Z" fill="#ff6b6b"/>
+  <g transform="translate(82 148)">
+    <circle cx="8" cy="6" r="8" fill="#f3bf94" stroke="#20364b" stroke-width="2"/>
+    <path d="M2 4 Q8 -4 14 4" fill="#2a4156"/>
+    <path d="M17 12 Q28 10 34 16" stroke="#438fe8" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M24 10 Q33 3 41 9" stroke="#f3bf94" stroke-width="5" fill="none" stroke-linecap="round"/>
+  </g>
+  <text x="277" y="72" text-anchor="middle" font-size="26" font-weight="900" fill="#0c5c92">Correct → swim forward!</text>
+</svg>`;
+</script>
+</body>
+</html>
