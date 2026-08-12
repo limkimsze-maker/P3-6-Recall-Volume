@@ -1,4 +1,4 @@
-name: Twelve Question 2P
+name: Twelve Question 2P v2
 on:
   push:
     branches: [main]
@@ -16,9 +16,10 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           s=s.replace('const TOTAL = 10;','let TOTAL = 10;',1).replace('const TOTAL=10;','let TOTAL=10;',1)
-          tag='<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-2p-12-round-v1.js?v=20260811a"></script>\n'
+          s=re.sub(r'\s*<script src="https://limkimsze-maker\.github\.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-2p-12-round-v1\.js\?v=[^"]+"></script>','',s)
+          tag='<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-2p-12-round-v2.js?v=20260812b"></script>\n'
           key='sports-fiesta-medal-hook-v4.js'
-          if 'sports-fiesta-2p-12-round-v1.js' not in s:
+          if 'sports-fiesta-2p-12-round-v2.js' not in s:
               pos=s.find('<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/'+key)
               if pos!=-1:s=s[:pos]+tag+s[pos:]
           s=re.sub(r'sports-fiesta-medal-hook-v4\.js\?v=[^"\']+', 'sports-fiesta-medal-hook-v4.js?v=20260811a', s)
@@ -29,6 +30,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add index.html
-          git commit -m "Use 12-question 2P gold medal rule"
+          git commit -m "Keep 2-player rounds on v2 runtime"
           git pull --rebase origin main
           git push origin main
