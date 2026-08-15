@@ -37,6 +37,11 @@ header{
 }
 header h1{margin:0;font-size:clamp(22px,2.8vw,36px)}
 header .sub{font-size:12px;line-height:1.25;text-align:right}
+.sfBackToHub{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  text-decoration:none;background:#fff;color:var(--deep);font-weight:900;
+  border-radius:999px;padding:7px 11px;font-size:13px;box-shadow:0 2px 0 #0002
+}
 main{flex:1;min-height:0;padding:10px;display:flex;flex-direction:column}
 .screen{display:none;height:100%;min-height:0}
 .screen.active{display:flex}
@@ -166,7 +171,10 @@ main{flex:1;min-height:0;padding:10px;display:flex;flex-direction:column}
 }
 @media(max-width:700px){
   body{padding:0}.app{height:100vh;border-radius:0}
-  header{padding:8px 12px}
+  header{padding:8px 10px}
+  .sfBackToHub{padding:6px 8px;font-size:11px}
+  header .sub{display:none}
+  header h1{font-size:clamp(18px,5vw,24px)}
   main{padding:8px}
   .sceneInner{gap:6px}
   .containerSvg{height:145px}
@@ -189,6 +197,7 @@ main{flex:1;min-height:0;padding:10px;display:flex;flex-direction:column}
 <body>
 <div class="app">
 <header>
+  <a class="sfBackToHub" href="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/" aria-label="Back to Sports Fiesta Practice Hub">← Fiesta Hub</a>
   <h1>🏊 Swimming Volume Recall Challenge</h1>
   <div class="sub">Read volume in litres • compare containers<br>1 Player or 2 Players</div>
 </header>
@@ -206,8 +215,8 @@ main{flex:1;min-height:0;padding:10px;display:flex;flex-direction:column}
       </div>
 
       <div class="note">
-        Correct answer: the swimmer moves forward.<br>
-        Wrong answer: the swimmer makes a splash and stays behind.
+        Correct answer: the swimmer moves forward. Wrong answer: the swimmer makes a splash and stays behind.<br>
+        1 Player: 10 questions. 2 Players: 12 questions, with 6 turns each.
       </div>
     </div>
 
@@ -391,7 +400,8 @@ function sampleDistinct(arr,n){
   return s.slice(0,n);
 }
 function startGame(m){
-  mode=m;
+  mode=Number(m);
+  TOTAL=mode===2?12:10;
   initAudio();
   if(audioCtx&&audioCtx.state==="suspended") audioCtx.resume();
   restart();
@@ -410,17 +420,22 @@ function restart(){
 
 // -------- QUESTION DATA --------
 function buildQuestions(){
+  const kinds=TOTAL===12
+    ? ["readA","readB","readC","greatest","smallest","compareDiff","readA","readB","readC","greatest","smallest","compareDiff"]
+    : ["readA","readB","readC","greatest","smallest","compareDiff","compareDiff","compareDiff","readA","greatest"];
+
   const qs=[];
-  const kinds=TOTAL===12?["readA","readB","readC","greatest","smallest","compareDiff","readA","readB","readC","greatest","smallest","compareDiff"]:["readA","readB","readC","greatest","smallest","compareDiff","compareDiff","compareDiff","readA","greatest"];
-  for(let i=0;i<TOTAL;i++){
+  const seen=new Set();
+
+  function makeQuestion(kind){
     const [a,b,c]=sampleDistinct([2,3,4,5,6,7,8,9],3);
     const vols={A:a,B:b,C:c};
     const labels=["A","B","C"];
-    const kind=kinds[i];
 
     if(kind==="readA"||kind==="readB"||kind==="readC"){
       const container=kind.slice(-1);
-      qs.push({
+      return {
+        key:`${kind}|${a},${b},${c}`,
         type:"number",
         badge:"Read volume",
         question:`What is the volume of water in Container ${container}?`,
@@ -429,51 +444,47 @@ function buildQuestions(){
         hint:"Type the number of litres.",
         explain:`Container ${container} contains ${vols[container]} ℓ of water.`,
         vols
-      });
-      continue;
+      };
     }
 
     if(kind==="greatest"){
       const ans=labels.reduce((m,x)=>vols[x]>vols[m]?x:m,labels[0]);
-      qs.push({
+      return {
+        key:`greatest|${a},${b},${c}`,
         type:"letter",
         badge:"Compare volume",
-        question:`Which container contains the greatest volume of water?`,
+        question:"Which container contains the greatest volume of water?",
         answer:ans,
         suffix:"",
         hint:"Type A, B or C.",
         explain:`Container ${ans} has the greatest volume of water.`,
         vols
-      });
-      continue;
+      };
     }
 
     if(kind==="smallest"){
       const ans=labels.reduce((m,x)=>vols[x]<vols[m]?x:m,labels[0]);
-      qs.push({
+      return {
+        key:`smallest|${a},${b},${c}`,
         type:"letter",
         badge:"Compare volume",
-        question:`Which container contains the smallest volume of water?`,
+        question:"Which container contains the smallest volume of water?",
         answer:ans,
         suffix:"",
         hint:"Type A, B or C.",
         explain:`Container ${ans} has the smallest volume of water.`,
         vols
-      });
-      continue;
+      };
     }
 
-    // compare difference: choose random pair and phrase greater/less correctly
     const pair=sampleDistinct(labels,2);
-    let x=pair[0], y=pair[1];
+    const x=pair[0],y=pair[1];
     const diff=Math.abs(vols[x]-vols[y]);
-    let qText="";
-    if(vols[x]>vols[y]){
-      qText=`The volume of water in Container ${x} is how many litres greater than that in Container ${y}?`;
-    }else{
-      qText=`The volume of water in Container ${x} is how many litres less than that in Container ${y}?`;
-    }
-    qs.push({
+    const qText=vols[x]>vols[y]
+      ? `The volume of water in Container ${x} is how many litres greater than that in Container ${y}?`
+      : `The volume of water in Container ${x} is how many litres less than that in Container ${y}?`;
+    return {
+      key:`compareDiff|${x},${y}|${a},${b},${c}`,
       type:"number",
       badge:"Compare difference",
       question:qText,
@@ -482,7 +493,18 @@ function buildQuestions(){
       hint:"Type the number of litres.",
       explain:`Container ${x} has ${vols[x]} ℓ and Container ${y} has ${vols[y]} ℓ, so the difference is ${diff} ℓ.`,
       vols
-    });
+    };
+  }
+
+  for(const kind of kinds){
+    let q=null;
+    for(let tries=0;tries<120;tries++){
+      const candidate=makeQuestion(kind);
+      if(!seen.has(candidate.key)){q=candidate;break}
+    }
+    if(!q) throw new Error("Could not generate a fresh volume question.");
+    seen.add(q.key);
+    qs.push(q);
   }
   return qs;
 }
@@ -609,7 +631,10 @@ function renderQuestion(){
 
   const check=document.getElementById("checkBtn");
   check.disabled=false;
-  document.getElementById("nextBtn").classList.add("hidden");
+  const next=document.getElementById("nextBtn");
+  next.disabled=false;
+  next.removeAttribute("disabled");
+  next.classList.add("hidden");
 
   const turn=document.getElementById("turnBanner");
   if(mode===2){
@@ -674,12 +699,37 @@ function checkAnswer(){
   document.getElementById("nextBtn").classList.remove("hidden");
 }
 function nextQuestion(){
+  if(!answered)return;
+  const next=document.getElementById("nextBtn");
+  if(next.disabled)return;
+  next.disabled=true;
   round++;
   if(round>=TOTAL){finish();return}
   if(mode===2) currentPlayer=currentPlayer===0?1:0;
   renderQuestion();
 }
+function saveHubProgress(){
+  try{
+    const key="sportsFiestaHubProgress_v1";
+    const data=JSON.parse(localStorage.getItem(key)||"{}")||{};
+    const old=data[6]||{};
+    const winner=mode===2?(scores[0]===scores[1]?0:(scores[0]>scores[1]?1:2)):0;
+    data[6]={
+      ...old,
+      completed:true,
+      pieceEarned:!!old.pieceEarned||mode===1,
+      perfectSingle:!!old.perfectSingle||(mode===1&&scores[0]===TOTAL),
+      verified:true,
+      source:"game-v5",
+      updatedAt:new Date().toISOString(),
+      lastMode:mode,
+      lastWinner:winner
+    };
+    localStorage.setItem(key,JSON.stringify(data));
+  }catch(e){console.warn("Could not save Sports Fiesta progress",e)}
+}
 function finish(){
+  saveHubProgress();
   document.getElementById("bar").style.width="100%";
   show("results");
   if(mode===1){
@@ -723,11 +773,5 @@ document.getElementById("previewArt").innerHTML=`
   <text x="277" y="72" text-anchor="middle" font-size="26" font-weight="900" fill="#0c5c92">Correct → swim forward!</text>
 </svg>`;
 </script>
-<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-original-questions-v1.js?v=20260810a" data-practice="6"></script>
-<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-2p-12-round-v2.js?v=20260812b"></script>
-<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-random-questions-v1.js?v=20260812a" data-practice="6"></script>
-<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-back-to-hub-v1.js?v=20260812a"></script>
-<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-next-guard-v1.js?v=20260812a" data-practice="6"></script>
-<script src="https://limkimsze-maker.github.io/P3-Length-Mass-and-Volume-Sports-Fiesta-/sports-fiesta-medal-hook-v4.js?v=20260810d" data-practice="6" data-sport="Swimming"></script>
 </body>
 </html>
